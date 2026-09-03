@@ -2,15 +2,18 @@ services:
   - type: web
     name: wazuh-attack-correlator
     runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python correlation_tool/server.py
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+    startCommand: cd /opt/render/project/src && python -c "from correlation_tool.server import run_server; run_server()"
     plan: free
     healthCheckPath: /healthz
+    healthCheckInterval: 30
     envVars:
-      - key: PYTHONPATH
-        value: /opt/render/project/src
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: PORT
+        value: 8000
+      - key: PYTHONUNBUFFERED
+        value: "1"
       - key: WAZUH_HOST
         value: https://172.16.20.62:55000
       - key: WAZUH_INDEXER_HOST

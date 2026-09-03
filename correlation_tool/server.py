@@ -5,7 +5,7 @@ import socketserver
 import sys
 import urllib.parse
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Add project root to Python path for module imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
