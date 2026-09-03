@@ -1,4 +1,5 @@
-const API_BASE_URL = window.WAZUH_API_BASE_URL || 'https://wazuh-attack-correlator.onrender.com';
+const isLocalDevelopment = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE_URL = window.WAZUH_API_BASE_URL || (isLocalDevelopment ? '' : 'https://wazuh-attack-correlator.onrender.com');
 
 function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
