@@ -1,12 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "echo 'No build required'",
+  "buildCommand": "pip install -q -r requirements.txt",
   "outputDirectory": ".",
-  "functions": {
-    "api/index.py": {
-      "runtime": "python@3.12"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
