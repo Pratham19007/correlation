@@ -109,10 +109,29 @@ class handler(BaseHTTPRequestHandler):
         if path.endswith("/sync") or path == "/api/wazuh/sync":
             try:
                 client = WazuhClient.from_config()
+                # Try to authenticate first to catch credential errors
+                auth_ok, auth_msg = client.authenticate()
+                if not auth_ok:
+                    self._send_json({"error": f"Authentication failed: {auth_msg}"}, status=401)
+                    return
+                
+                # Fetch alerts and correlate
                 report = client.fetch_and_correlate()
+                
+                # If no alerts found, provide diagnostic info
+                if not report.get("alerts"):
+                    # Try to get manager info for diagnostics
+                    mgr_info = client.get_manager_info()
+                    agents = client.get_agents()
+                    report["diagnostics"] = {
+                        "manager_info": mgr_info,
+                        "agent_count": len(agents) if agents else 0,
+                        "message": "No alerts found - check Wazuh has recent security events"
+                    }
+                
                 self._send_json(report)
             except Exception as e:
-                self._send_json({"error": str(e)}, status=500)
+                self._send_json({"error": f"Sync failed: {str(e)}", "type": type(e).__name__}, status=500)
             return
 
         if path.endswith("/correlate") or path == "/api/correlate":

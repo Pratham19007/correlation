@@ -233,25 +233,39 @@ class WazuhClient:
 
     def fetch_alerts(self, limit: int = 500, min_level: int = 3) -> List[Dict[str, Any]]:
         """Fetch alerts from Wazuh Indexer or Wazuh API."""
+        # Try Wazuh Indexer first (port 9200)
         alerts = self.fetch_alerts_from_indexer(limit=limit, min_level=min_level)
         if alerts:
             return alerts
 
-        # Try Wazuh API alerts endpoint if available
+        # Fallback: Try Wazuh API alerts endpoint if available
         if not self.token:
             auth_ok, _ = self.authenticate()
             if not auth_ok:
                 return []
 
-        url = f"{self.host}/alerts?limit={limit}"
-        headers = {"Authorization": f"Bearer {self.token}"}
-        status, resp = self._make_request(url, headers=headers)
-        if status == 200 and isinstance(resp, dict):
-            data = resp.get("data")
-            if isinstance(data, dict):
-                return data.get("affected_items") or data.get("items") or []
-            if isinstance(data, list):
-                return data
+        # Try multiple possible endpoints
+        endpoints = [
+            f"{self.host}/alerts?limit={limit}",
+            f"{self.host}/events?limit={limit}",
+            f"{self.host}/syscheck?limit={limit}"
+        ]
+        
+        for url in endpoints:
+            try:
+                headers = {"Authorization": f"Bearer {self.token}"}
+                status, resp = self._make_request(url, headers=headers)
+                if status == 200 and isinstance(resp, dict):
+                    data = resp.get("data")
+                    if isinstance(data, dict):
+                        items = data.get("affected_items") or data.get("items") or []
+                        if items:
+                            return items
+                    if isinstance(data, list) and data:
+                        return data
+            except Exception:
+                continue
+        
         return []
 
     def test_connection(self) -> Dict[str, Any]:
