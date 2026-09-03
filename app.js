@@ -1,3 +1,9 @@
+const API_BASE_URL = window.WAZUH_API_BASE_URL || 'https://wazuh-attack-correlator.onrender.com';
+
+function apiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
+
 const SAMPLE_WAZUH_LOGS = `[
   {
     "timestamp": "2026-08-24T08:15:10.123+0000",
@@ -921,7 +927,7 @@ async function checkWazuhConnection() {
   text.textContent = 'Wazuh: Checking...';
 
   try {
-    const res = await fetch('/api/wazuh/test');
+    const res = await fetch(apiUrl('/api/wazuh/test'));
     if (res.ok) {
       const data = await res.json();
       if (data.success) {
@@ -949,7 +955,7 @@ async function syncLiveWazuhAlerts() {
   syncBtn.disabled = true;
 
   try {
-    const res = await fetch('/api/wazuh/sync');
+    const res = await fetch(apiUrl('/api/wazuh/sync'));
     const report = await res.json();
     if (!res.ok || report.error) {
       throw new Error(report.error || `Sync request failed (HTTP ${res.status})`);
@@ -984,7 +990,7 @@ async function openSettingsModal() {
   modal.classList.remove('hidden');
 
   try {
-    const res = await fetch('/api/wazuh/config');
+    const res = await fetch(apiUrl('/api/wazuh/config'));
     if (res.ok) {
       const cfg = await res.json();
       document.getElementById('wazuh-host-input').value = cfg.host || '';
@@ -1018,7 +1024,7 @@ async function testWazuhConnectionFromModal() {
   resultBox.textContent = 'Connecting to Wazuh...';
 
   try {
-    const res = await fetch('/api/wazuh/test', {
+    const res = await fetch(apiUrl('/api/wazuh/test'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ host, indexer_host: indexerHost, username, password })
@@ -1055,7 +1061,7 @@ async function saveWazuhSettingsFromModal() {
     const payload = { host, indexer_host: indexerHost, username };
     if (password) payload.password = password;
 
-    const res = await fetch('/api/wazuh/config', {
+    const res = await fetch(apiUrl('/api/wazuh/config'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1081,7 +1087,7 @@ async function openAgentsModal() {
   container.innerHTML = '<p>Querying Wazuh nodes & agents...</p>';
 
   try {
-    const res = await fetch('/api/wazuh/agents');
+    const res = await fetch(apiUrl('/api/wazuh/agents'));
     if (res.ok) {
       const data = await res.json();
       const agents = data.agents || [];
