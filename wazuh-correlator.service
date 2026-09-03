@@ -1,0 +1,15 @@
+[Unit]
+Description=Wazuh Attack Correlator Service
+After=network.target wazuh-manager.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/wazuh-correlator
+ExecStart=/usr/bin/python3 -m correlation_tool.server 8000
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

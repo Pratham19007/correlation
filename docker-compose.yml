@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  wazuh-correlator:
+    build: .
+    container_name: wazuh-attack-correlator
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./wazuh_config.json:/app/wazuh_config.json
+    environment:
+      - PORT=8000

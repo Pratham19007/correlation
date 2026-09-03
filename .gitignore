@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.vercel/
+.system_generated/
+report.json
+.env
+.DS_Store

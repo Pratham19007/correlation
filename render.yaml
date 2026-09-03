@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: wazuh-attack-correlator
+    runtime: python
+    buildCommand: ""
+    startCommand: python -m correlation_tool.server
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: WAZUH_HOST
+        value: https://172.16.20.62:55000
+      - key: WAZUH_INDEXER_HOST
+        value: https://172.16.20.62:9200
+      - key: WAZUH_USER
+        value: admin
+      - key: WAZUH_PASSWORD
+        value: l6ArtMq7XC*XGtK08mwGBCPsWXh?Lgxv
+      - key: WAZUH_VERIFY_SSL
+        value: "false"

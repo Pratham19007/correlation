@@ -1,0 +1,143 @@
+[
+  {
+    "timestamp": "2026-08-24T08:15:10.123+0000",
+    "rule": {
+      "id": "5710",
+      "level": 5,
+      "description": "sshd: Attempt to login using a non-existent user",
+      "groups": ["syslog", "sshd", "authentication_failed"]
+    },
+    "agent": {
+      "id": "000",
+      "name": "wazuh-manager",
+      "ip": "192.168.1.10"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "198.51.100.50",
+      "srcuser": "root"
+    },
+    "location": "/var/log/auth.log",
+    "full_log": "Aug 24 08:15:10 wazuh-manager sshd[4120]: Failed password for root from 198.51.100.50 port 43212 ssh2"
+  },
+  {
+    "timestamp": "2026-08-24T08:15:25.456+0000",
+    "rule": {
+      "id": "5710",
+      "level": 5,
+      "description": "sshd: Attempt to login using a non-existent user",
+      "groups": ["syslog", "sshd", "authentication_failed"]
+    },
+    "agent": {
+      "id": "000",
+      "name": "wazuh-manager",
+      "ip": "192.168.1.10"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "198.51.100.50",
+      "srcuser": "admin"
+    },
+    "location": "/var/log/auth.log",
+    "full_log": "Aug 24 08:15:25 wazuh-manager sshd[4125]: Failed password for invalid user admin from 198.51.100.50 port 43218 ssh2"
+  },
+  {
+    "timestamp": "2026-08-24T08:20:00.100+0000",
+    "rule": {
+      "id": "31101",
+      "level": 7,
+      "description": "SQL injection attempt detected in HTTP request",
+      "groups": ["web", "accesslog", "sql_injection", "attack"]
+    },
+    "agent": {
+      "id": "001",
+      "name": "web-server-01",
+      "ip": "192.168.1.101"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "203.0.113.88",
+      "url": "/search?q=admin' OR '1'='1",
+      "http_user_agent": "sqlmap/1.7#stable",
+      "status": "200"
+    },
+    "location": "(web-server-01) 192.168.1.101->/var/log/nginx/access.log",
+    "full_log": "203.0.113.88 - - [24/Aug/2026:08:20:00 +0000] \"GET /search?q=admin' OR '1'='1 HTTP/1.1\" 200 4520 \"-\" \"sqlmap/1.7#stable\""
+  },
+  {
+    "timestamp": "2026-08-24T08:20:15.200+0000",
+    "rule": {
+      "id": "30101",
+      "level": 6,
+      "description": "Web server 403 Forbidden - Access to sensitive endpoint blocked",
+      "groups": ["web", "accesslog", "forbidden"]
+    },
+    "agent": {
+      "id": "001",
+      "name": "web-server-01",
+      "ip": "192.168.1.101"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "203.0.113.88",
+      "url": "/admin/config.php",
+      "status": "403"
+    },
+    "location": "(web-server-01) 192.168.1.101->/var/log/nginx/access.log",
+    "full_log": "203.0.113.88 - - [24/Aug/2026:08:20:15 +0000] \"GET /admin/config.php HTTP/1.1\" 403 210 \"-\" \"Mozilla/5.0\""
+  },
+  {
+    "timestamp": "2026-08-24T08:25:00.000+0000",
+    "rule": {
+      "id": "5710",
+      "level": 5,
+      "description": "sshd: Failed login attempt",
+      "groups": ["syslog", "sshd", "authentication_failed"]
+    },
+    "agent": {
+      "id": "002",
+      "name": "db-server-02",
+      "ip": "192.168.1.102"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "192.0.2.77",
+      "srcuser": "postgres"
+    },
+    "location": "(db-server-02) 192.168.1.102->/var/log/auth.log",
+    "full_log": "Aug 24 08:25:00 db-server-02 sshd[5230]: Failed password for postgres from 192.0.2.77 port 51234 ssh2"
+  },
+  {
+    "timestamp": "2026-08-24T08:25:30.000+0000",
+    "rule": {
+      "id": "5710",
+      "level": 5,
+      "description": "sshd: Failed login attempt",
+      "groups": ["syslog", "sshd", "authentication_failed"]
+    },
+    "agent": {
+      "id": "002",
+      "name": "db-server-02",
+      "ip": "192.168.1.102"
+    },
+    "manager": {
+      "name": "wazuh-manager"
+    },
+    "data": {
+      "srcip": "192.0.2.77",
+      "srcuser": "dbadmin"
+    },
+    "location": "(db-server-02) 192.168.1.102->/var/log/auth.log",
+    "full_log": "Aug 24 08:25:30 db-server-02 sshd[5238]: Failed password for dbadmin from 192.0.2.77 port 51240 ssh2"
+  }
+]

@@ -1,0 +1,64 @@
+[
+  {
+    "timestamp": "2026-08-07T09:00:00Z",
+    "source": "auth",
+    "ip": "203.0.113.5",
+    "event": "login_failed",
+    "user": "admin",
+    "message": "Failed login for admin"
+  },
+  {
+    "timestamp": "2026-08-07T09:00:10Z",
+    "source": "auth",
+    "ip": "203.0.113.5",
+    "event": "login_failed",
+    "user": "root",
+    "message": "Failed login for root"
+  },
+  {
+    "timestamp": "2026-08-07T09:00:20Z",
+    "source": "web",
+    "ip": "203.0.113.5",
+    "event": "http_request",
+    "status": 200,
+    "path": "/wp-login.php",
+    "user_agent": "Mozilla/5.0 (compatible; sqlmap/1.6; Windows NT 10.0; Win64; x64)",
+    "message": "Scanner probe"
+  },
+  {
+    "timestamp": "2026-08-07T09:00:30Z",
+    "source": "web",
+    "ip": "203.0.113.5",
+    "event": "http_request",
+    "status": 200,
+    "path": "/.git/config",
+    "message": "Attempt to read git metadata"
+  },
+  {
+    "timestamp": "2026-08-07T09:00:40Z",
+    "source": "web",
+    "ip": "203.0.113.5",
+    "event": "http_request",
+    "status": 200,
+    "path": "/search?q=admin' OR '1'='1",
+    "message": "SQL injection probe"
+  },
+  {
+    "timestamp": "2026-08-07T09:00:50Z",
+    "source": "waf",
+    "ip": "203.0.113.5",
+    "event": "blocked_request",
+    "status": 403,
+    "path": "/admin",
+    "message": "Blocked suspicious request"
+  },
+  {
+    "timestamp": "2026-08-07T09:01:00Z",
+    "source": "web",
+    "ip": "198.51.100.22",
+    "event": "http_request",
+    "status": 200,
+    "path": "/dashboard",
+    "message": "Normal user activity"
+  }
+]

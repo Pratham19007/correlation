@@ -1,0 +1,2 @@
+# Wazuh Attack Correlator uses standard library (urllib, ssl, json, http.server)
+# No external dependencies required.

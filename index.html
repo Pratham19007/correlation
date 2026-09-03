@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wazuh Log Correlation & Attack Detector</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <div class="topbar-meta">
+            <div class="header-badge">Wazuh SIEM Attached</div>
+            <div id="wazuh-status-pill" class="status-pill checking" title="Checking connection to Wazuh">
+              <span class="status-dot"></span>
+              <span id="wazuh-status-text">Wazuh: Checking...</span>
+            </div>
+          </div>
+          <p class="eyebrow">Security Operations & Threat Correlation</p>
+          <h1>Wazuh Attack Correlator</h1>
+          <p class="tagline">Detect whether security attacks target the <strong>Wazuh Manager</strong> (ID: 000) or monitored <strong>Wazuh Agents</strong>.</p>
+        </div>
+        <div class="actions">
+          <button id="sync-wazuh" class="live-btn" type="button" title="Fetch and correlate live alerts from attached Wazuh SIEM">⚡ Sync Live Wazuh</button>
+          <button id="load-wazuh-sample" class="secondary-btn" type="button" title="Load sample Wazuh SIEM alerts">Load Sample</button>
+          <button id="open-settings" class="secondary-btn btn-sm" type="button" title="Configure Wazuh server connection and credentials">⚙ Settings</button>
+          <button id="view-agents" class="secondary-btn btn-sm" type="button" title="View discovered Wazuh Manager and Agents">🖥 Agents</button>
+          <button id="download-report" class="secondary-btn" type="button">Download PDF</button>
+          <button id="export-pdf" class="pdf-btn" type="button">Print PDF</button>
+        </div>
+      </header>
+
+      <!-- Subheader Live Info Banner -->
+      <div id="live-info-banner" class="live-banner hidden">
+        <span class="live-banner-icon">📡</span>
+        <span id="live-banner-text">Connected to Wazuh SIEM. Ready to sync live security alerts.</span>
+        <span id="live-banner-meta"></span>
+      </div>
+
+      <main class="layout">
+        <section class="panel input-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Log source</h2>
+              <span>Wazuh live feed, alerts.json, CSV, NDJSON, or pasted logs</span>
+            </div>
+            <div class="panel-actions">
+              <button id="load-manager-sample" class="mini-btn" type="button" title="Load Manager-targeted attack sample">Manager Sample</button>
+              <button id="load-agent-sample" class="mini-btn" type="button" title="Load Agent-targeted attack sample">Agent Sample</button>
+              <button id="clear-input" class="text-btn" type="button">Clear</button>
+            </div>
+          </div>
+
+          <div id="dropzone" class="dropzone" tabindex="0" aria-label="Add JSON or CSV log file">
+            <input id="file-input" type="file" accept=".json,.csv,.log,.txt,application/json,text/csv,text/plain" hidden />
+            <div class="dropzone-content">
+              <div class="drop-icon">⬇</div>
+              <p>Drop Wazuh JSON or CSV alert file here</p>
+              <button id="browse-file" class="secondary-btn" type="button">Browse files</button>
+            </div>
+          </div>
+
+          <textarea id="log-input" spellcheck="false" aria-label="Log input" placeholder="Paste Wazuh alerts.json, JSON, NDJSON, or CSV log rows here..."></textarea>
+          
+          <div class="input-footer">
+            <button id="generate-report" class="primary-btn w-full" type="button">Analyze Logs in Editor</button>
+          </div>
+        </section>
+
+        <section class="panel report-panel" id="report-panel">
+          <div class="empty-state" id="empty-state">
+            <h2>No report generated yet</h2>
+            <p>Click <strong>⚡ Sync Live Wazuh</strong> to pull live alerts from your attached Wazuh SIEM, or analyze logs in the editor.</p>
+          </div>
+
+          <div id="report-content" class="report-content hidden">
+            <div class="report-header">
+              <div>
+                <p class="eyebrow">Findings summary</p>
+                <h2>Attack investigation report</h2>
+              </div>
+              <div id="risk-badge" class="risk-badge">LOW</div>
+            </div>
+
+            <div class="summary-grid" id="summary-grid"></div>
+
+            <div class="section-block">
+              <h3>Executive summary</h3>
+              <p id="executive-summary"></p>
+            </div>
+
+            <div class="section-block">
+              <div class="section-header-flex">
+                <h3>Correlated attack alerts</h3>
+                <span id="alerts-count-tag" class="count-tag">0 alerts</span>
+              </div>
+              <div id="alerts-container"></div>
+            </div>
+
+            <div class="section-block">
+              <h3>Target & Attack details</h3>
+              <div id="details-container"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Wazuh Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Wazuh Connection & Credentials</h3>
+          <button id="close-settings" class="close-btn" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">Configure the connection to your Wazuh Manager API and Wazuh Indexer.</p>
+          <div class="form-group">
+            <label for="wazuh-host-input">Wazuh API Host / URL</label>
+            <input id="wazuh-host-input" type="text" placeholder="https://localhost:55000" />
+            <small>Default Wazuh REST API port is 55000.</small>
+          </div>
+          <div class="form-group">
+            <label for="wazuh-indexer-input">Wazuh Indexer Host / URL</label>
+            <input id="wazuh-indexer-input" type="text" placeholder="https://localhost:9200" />
+            <small>Wazuh Indexer / OpenSearch port for alert search queries.</small>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="wazuh-user-input">Username</label>
+              <input id="wazuh-user-input" type="text" placeholder="admin" />
+            </div>
+            <div class="form-group">
+              <label for="wazuh-pass-input">Password</label>
+              <input id="wazuh-pass-input" type="password" placeholder="••••••••" />
+            </div>
+          </div>
+          <div id="connection-test-result" class="test-result-box hidden"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="test-connection-btn" class="secondary-btn" type="button">Test Connection</button>
+          <button id="save-settings-btn" class="primary-btn" type="button">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wazuh Agents Inventory Modal -->
+    <div id="agents-modal" class="modal-backdrop hidden">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <h3>Wazuh Nodes & Agents Inventory</h3>
+          <button id="close-agents" class="close-btn" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="agents-list-container">
+            <p>Loading agent inventory from Wazuh...</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="refresh-agents-btn" class="secondary-btn" type="button">Refresh Inventory</button>
+          <button id="close-agents-btn" class="primary-btn" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
