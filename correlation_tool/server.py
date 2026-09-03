@@ -7,6 +7,9 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Dict
 
+# Add project root to Python path for module imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from correlation_tool.log_correlator import correlate_logs, normalize_log_input
 from correlation_tool.wazuh_client import WazuhClient, load_wazuh_config, save_wazuh_config
 
