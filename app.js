@@ -950,27 +950,32 @@ async function syncLiveWazuhAlerts() {
 
   try {
     const res = await fetch('/api/wazuh/sync');
-    if (res.ok) {
-      const report = await res.json();
-      if (report && report.summary) {
-        showReport(report);
-        const metaInfo = report.meta ? ` (Fetched ${report.meta.fetched_count} live alerts from Wazuh)` : '';
-        document.getElementById('executive-summary').textContent += metaInfo;
-        syncBtn.innerHTML = '✔ Synced!';
-        setTimeout(() => {
-          syncBtn.innerHTML = originalHtml;
-          syncBtn.disabled = false;
-        }, 2000);
-        return;
+    const report = await res.json();
+    if (!res.ok || report.error) {
+      throw new Error(report.error || `Sync request failed (HTTP ${res.status})`);
+    }
+    if (report && report.summary) {
+      showReport(report);
+      const fetchedCount = report.meta ? report.meta.fetched_count : 0;
+      const metaInfo = ` (Fetched ${fetchedCount} live alerts from Wazuh)`;
+      document.getElementById('executive-summary').textContent += metaInfo;
+      syncBtn.innerHTML = '✔ Synced!';
+      setTimeout(() => {
+        syncBtn.innerHTML = originalHtml;
+        syncBtn.disabled = false;
+      }, 2000);
+      if (fetchedCount === 0) {
+        const diagnosticMessage = report.diagnostics?.message || report.meta?.status || 'Wazuh returned no alerts';
+        throw new Error(diagnosticMessage);
       }
+      return;
     }
   } catch (err) {
-    // fallback
+    alert(`Could not sync live alerts from Wazuh: ${err.message}`);
   }
 
   syncBtn.innerHTML = originalHtml;
   syncBtn.disabled = false;
-  alert('Could not sync live alerts from Wazuh. Please check that the server is running and Wazuh connection settings are configured in ⚙ Settings.');
 }
 
 // Load and Save Settings Modal

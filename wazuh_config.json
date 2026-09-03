@@ -1,8 +1,0 @@
-{
-  "host": "https://172.16.20.62:55000",
-  "indexer_host": "https://172.16.20.62:9200",
-  "username": "admin",
-  "password": "l6ArtMq7XC*XGtK08mwGBCPsWXh?Lgxv",
-  "verify_ssl": false,
-  "timeout": 10
-}

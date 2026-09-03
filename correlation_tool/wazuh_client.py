@@ -202,7 +202,7 @@ class WazuhClient:
                 return data
         return []
 
-    def fetch_alerts_from_indexer(self, limit: int = 500, min_level: int = 3) -> List[Dict[str, Any]]:
+    def fetch_alerts_from_indexer(self, limit: int = 500, min_level: int = 3) -> Optional[List[Dict[str, Any]]]:
         """Query Wazuh Indexer / OpenSearch (port 9200) for alerts."""
         url = f"{self.indexer_host}/wazuh-alerts-*/_search"
         auth_str = f"{self.username}:{self.password}"
@@ -229,7 +229,7 @@ class WazuhClient:
             hits = resp.get("hits", {}).get("hits", [])
             alerts = [hit.get("_source") for hit in hits if isinstance(hit, dict) and "_source" in hit]
             return alerts
-        return []
+        return None
 
     def fetch_alerts(self, limit: int = 500, min_level: int = 3) -> List[Dict[str, Any]]:
         """Fetch alerts from Wazuh Indexer or Wazuh API."""

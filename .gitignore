@@ -6,4 +6,6 @@ __pycache__/
 .system_generated/
 report.json
 .env
+.wazuh_config.json
+wazuh_config.json
 .DS_Store
