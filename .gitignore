@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 *.log
 .vercel/
+.tools/
 .system_generated/
 report.json
 .env
