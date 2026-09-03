@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "pip install -q -r requirements.txt",
   "outputDirectory": ".",
   "routes": [
     {
