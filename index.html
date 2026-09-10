@@ -117,6 +117,11 @@
         <div class="modal-body">
           <p class="modal-description">Configure the connection to your Wazuh Manager API and Wazuh Indexer.</p>
           <div class="form-group">
+            <label for="wazuh-backend-url-input">Backend / Bridge API URL (Vercel & Remote Access)</label>
+            <input id="wazuh-backend-url-input" type="text" placeholder="Leave empty for default (/api) or enter https://xxxx.trycloudflare.com" />
+            <small>If your frontend is on Vercel and Wazuh is on a private network (172.16.x.x), enter your Cloudflare Tunnel bridge URL here. No VPN required.</small>
+          </div>
+          <div class="form-group">
             <label for="wazuh-host-input">Wazuh API Host / URL</label>
             <input id="wazuh-host-input" type="text" placeholder="https://localhost:55000" />
             <small>Default Wazuh REST API port is 55000.</small>
@@ -139,6 +144,7 @@
           <div id="connection-test-result" class="test-result-box hidden"></div>
         </div>
         <div class="modal-footer">
+          <button id="reset-backend-btn" class="text-btn" type="button" style="margin-right:auto;">Reset to Default</button>
           <button id="test-connection-btn" class="secondary-btn" type="button">Test Connection</button>
           <button id="save-settings-btn" class="primary-btn" type="button">Save Settings</button>
         </div>

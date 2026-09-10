@@ -1,8 +1,27 @@
-const isLocalDevelopment = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-const API_BASE_URL = window.WAZUH_API_BASE_URL || (isLocalDevelopment ? '' : 'https://YOUR_PUBLIC_BACKEND_URL');
+function getBackendUrl() {
+  const custom = (localStorage.getItem('wazuh_backend_url') || '').trim();
+  if (custom) {
+    return custom.replace(/\/+$/, '');
+  }
+  const configured = (window.WAZUH_API_BASE_URL || '').trim();
+  if (configured && !configured.includes('YOUR_PUBLIC_BACKEND_URL')) {
+    return configured.replace(/\/+$/, '');
+  }
+  return '';
+}
+
+function setBackendUrl(url) {
+  const cleaned = (url || '').trim().replace(/\/+$/, '');
+  if (cleaned) {
+    localStorage.setItem('wazuh_backend_url', cleaned);
+  } else {
+    localStorage.removeItem('wazuh_backend_url');
+  }
+}
 
 function apiUrl(path) {
-  return `${API_BASE_URL}${path}`;
+  const base = getBackendUrl();
+  return `${base}${path}`;
 }
 
 const SAMPLE_WAZUH_LOGS = `[
@@ -935,7 +954,7 @@ async function checkWazuhConnection() {
         pill.className = 'status-pill connected';
         text.textContent = `Wazuh: Connected (${data.agent_count} Node${data.agent_count === 1 ? '' : 's'})`;
         banner.classList.remove('hidden');
-        bannerText.textContent = `Connected to Wazuh SIEM (${data.host}). ${data.agent_count} node(s) discovered.`;
+        bannerText.textContent = `Connected to Wazuh SIEM (${data.indexer_host || data.host}). ${data.agent_count} node(s) discovered.`;
         return;
       }
     }
@@ -945,7 +964,13 @@ async function checkWazuhConnection() {
 
   pill.className = 'status-pill disconnected';
   text.textContent = 'Wazuh: Offline (Configure)';
-  banner.classList.add('hidden');
+  banner.classList.remove('hidden');
+  const isVercel = window.location.hostname.includes('vercel.app');
+  if (isVercel && !localStorage.getItem('wazuh_backend_url')) {
+    bannerText.innerHTML = '⚠ Wazuh on private network (172.16.x.x) is unreachable from Vercel. <a href="javascript:openSettingsModal()" style="color:inherit;text-decoration:underline;font-weight:bold;">Open Settings</a> to enter your Cloudflare Tunnel URL (zero VPN).';
+  } else {
+    bannerText.textContent = 'Wazuh SIEM is offline or unreachable. Click to configure connection.';
+  }
 }
 
 // Sync live alerts directly from attached Wazuh SIEM
@@ -957,10 +982,15 @@ async function syncLiveWazuhAlerts() {
 
   try {
     const res = await fetch(apiUrl('/api/wazuh/sync'));
-    const report = await res.json();
-    if (!res.ok || report.error) {
-      throw new Error(report.error || `Sync request failed (HTTP ${res.status})`);
+    if (!res.ok) {
+      let errMsg = `Sync request failed (HTTP ${res.status})`;
+      try {
+        const errJson = await res.json();
+        if (errJson.error) errMsg = errJson.error;
+      } catch (_) {}
+      throw new Error(errMsg);
     }
+    const report = await res.json();
     if (report && report.summary) {
       showReport(report);
       const fetchedCount = report.meta ? report.meta.fetched_count : 0;
@@ -973,12 +1003,17 @@ async function syncLiveWazuhAlerts() {
       }, 2000);
       if (fetchedCount === 0) {
         const diagnosticMessage = report.diagnostics?.message || report.meta?.status || 'Wazuh returned no alerts';
-        throw new Error(diagnosticMessage);
+        alert(`Notice: ${diagnosticMessage}`);
       }
       return;
     }
   } catch (err) {
-    alert(`Could not sync live alerts from Wazuh: ${err.message}`);
+    const isVercel = window.location.hostname.includes('vercel.app');
+    let helpMsg = `Could not sync live alerts from Wazuh: ${err.message}`;
+    if (isVercel && !localStorage.getItem('wazuh_backend_url')) {
+      helpMsg += '\n\nTroubleshooting: Your Wazuh instance is on a private network (172.16.20.62) and cannot be reached by Vercel directly.\nRun "start_bridge.bat" locally, copy the public https://*.trycloudflare.com URL, and paste it into Settings -> Backend URL (zero VPN required).';
+    }
+    alert(helpMsg);
   }
 
   syncBtn.innerHTML = originalHtml;
@@ -989,6 +1024,11 @@ async function syncLiveWazuhAlerts() {
 async function openSettingsModal() {
   const modal = document.getElementById('settings-modal');
   modal.classList.remove('hidden');
+
+  const backendInput = document.getElementById('wazuh-backend-url-input');
+  if (backendInput) {
+    backendInput.value = localStorage.getItem('wazuh_backend_url') || '';
+  }
 
   try {
     const res = await fetch(apiUrl('/api/wazuh/config'));
@@ -1011,7 +1051,23 @@ function closeSettingsModal() {
   document.getElementById('connection-test-result').classList.add('hidden');
 }
 
+function resetBackendUrl() {
+  localStorage.removeItem('wazuh_backend_url');
+  const backendInput = document.getElementById('wazuh-backend-url-input');
+  if (backendInput) backendInput.value = '';
+  const resultBox = document.getElementById('connection-test-result');
+  if (resultBox) {
+    resultBox.className = 'test-result-box';
+    resultBox.classList.remove('hidden');
+    resultBox.textContent = 'Backend URL reset to default (/api). Click "Save Settings" or "Test Connection".';
+  }
+}
+
 async function testWazuhConnectionFromModal() {
+  const backendInput = document.getElementById('wazuh-backend-url-input');
+  const candidateBackend = backendInput ? backendInput.value.trim().replace(/\/+$/, '') : '';
+  const testUrl = (candidateBackend || getBackendUrl()) + '/api/wazuh/test';
+
   const host = document.getElementById('wazuh-host-input').value.trim();
   const indexerHost = document.getElementById('wazuh-indexer-input').value.trim();
   const username = document.getElementById('wazuh-user-input').value.trim();
@@ -1025,7 +1081,7 @@ async function testWazuhConnectionFromModal() {
   resultBox.textContent = 'Connecting to Wazuh...';
 
   try {
-    const res = await fetch(apiUrl('/api/wazuh/test'), {
+    const res = await fetch(testUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ host, indexer_host: indexerHost, username, password })
@@ -1049,6 +1105,10 @@ async function testWazuhConnectionFromModal() {
 }
 
 async function saveWazuhSettingsFromModal() {
+  const backendInput = document.getElementById('wazuh-backend-url-input');
+  const customBackend = backendInput ? backendInput.value.trim() : '';
+  setBackendUrl(customBackend);
+
   const host = document.getElementById('wazuh-host-input').value.trim();
   const indexerHost = document.getElementById('wazuh-indexer-input').value.trim();
   const username = document.getElementById('wazuh-user-input').value.trim();
@@ -1068,12 +1128,18 @@ async function saveWazuhSettingsFromModal() {
       body: JSON.stringify(payload)
     });
     if (res.ok) {
-      alert('Wazuh configuration saved successfully!');
+      alert('Wazuh configuration & Backend URL saved successfully!');
+      closeSettingsModal();
+      checkWazuhConnection();
+    } else {
+      alert('Backend URL saved locally.');
       closeSettingsModal();
       checkWazuhConnection();
     }
   } catch (err) {
-    alert(`Failed to save settings: ${err.message}`);
+    alert(`Backend URL saved in browser storage. Note: Backend unreachable: ${err.message}`);
+    closeSettingsModal();
+    checkWazuhConnection();
   }
 
   saveBtn.textContent = 'Save Settings';
@@ -1294,6 +1360,8 @@ document.getElementById('open-settings').addEventListener('click', openSettingsM
 document.getElementById('close-settings').addEventListener('click', closeSettingsModal);
 document.getElementById('test-connection-btn').addEventListener('click', testWazuhConnectionFromModal);
 document.getElementById('save-settings-btn').addEventListener('click', saveWazuhSettingsFromModal);
+const resetBackendBtn = document.getElementById('reset-backend-btn');
+if (resetBackendBtn) resetBackendBtn.addEventListener('click', resetBackendUrl);
 document.getElementById('wazuh-status-pill').addEventListener('click', openSettingsModal);
 
 document.getElementById('view-agents').addEventListener('click', openAgentsModal);

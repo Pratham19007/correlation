@@ -109,24 +109,17 @@ class handler(BaseHTTPRequestHandler):
         if path.endswith("/sync") or path == "/api/wazuh/sync":
             try:
                 client = WazuhClient.from_config()
-                # Try to authenticate first to catch credential errors
-                auth_ok, auth_msg = client.authenticate()
-                if not auth_ok:
-                    self._send_json({"error": f"Authentication failed: {auth_msg}"}, status=401)
-                    return
-                
-                # Fetch alerts and correlate
+                # Fetch alerts and correlate directly (supports Indexer port 9200 and API port 55000)
                 report = client.fetch_and_correlate()
                 
                 # If no alerts found, provide diagnostic info
                 if not report.get("alerts"):
-                    # Try to get manager info for diagnostics
                     mgr_info = client.get_manager_info()
                     agents = client.get_agents()
                     report["diagnostics"] = {
                         "manager_info": mgr_info,
                         "agent_count": len(agents) if agents else 0,
-                        "message": "No alerts found - check Wazuh has recent security events"
+                        "message": "No alerts found - verify Wazuh host/indexer reachability or check for recent alerts"
                     }
                 
                 self._send_json(report)

@@ -37,6 +37,20 @@ npm install -g vercel
 vercel
 ```
 
+### Connecting Vercel to a Private Network Wazuh (Zero VPN)
+
+If your Wazuh server is hosted on a private LAN/lab IP (e.g., `172.16.20.62`), Vercel cannot reach it directly across the public internet. You can connect securely **without any VPN**:
+
+1. Run the bridge launcher on your local machine:
+   ```bash
+   start_bridge.bat
+   # or in PowerShell:
+   .\start_bridge.ps1
+   ```
+2. Copy the generated public HTTPS URL (e.g., `https://xxxx.trycloudflare.com`).
+3. Open your Vercel frontend, click **⚙ Settings**, paste the URL into **Backend / Bridge API URL**, and click **Save Settings**.
+4. Click **⚡ Sync Live Wazuh** to ingest and correlate live security alerts!
+
 ---
 
 ## Deploy to Render
