@@ -6,7 +6,6 @@ services:
     startCommand: cd /opt/render/project/src && python -c "from correlation_tool.server import run_server; run_server()"
     plan: free
     healthCheckPath: /healthz
-    healthCheckInterval: 30
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
