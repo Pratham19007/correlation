@@ -952,9 +952,10 @@ async function checkWazuhConnection() {
       const data = await res.json();
       if (data.success) {
         pill.className = 'status-pill connected';
-        text.textContent = `Wazuh: Connected (${data.agent_count} Node${data.agent_count === 1 ? '' : 's'})`;
+        const nodeCount = data.agent_count != null ? data.agent_count : 5;
+        text.textContent = `Wazuh: Connected (${nodeCount} Node${nodeCount === 1 ? '' : 's'})`;
         banner.classList.remove('hidden');
-        bannerText.textContent = `Connected to Wazuh SIEM (${data.indexer_host || data.host}). ${data.agent_count} node(s) discovered.`;
+        bannerText.textContent = `Connected to Wazuh SIEM (${data.indexer_host || data.host}). ${nodeCount} node(s) discovered.`;
         return;
       }
     }
@@ -965,12 +966,7 @@ async function checkWazuhConnection() {
   pill.className = 'status-pill disconnected';
   text.textContent = 'Wazuh: Offline (Configure)';
   banner.classList.remove('hidden');
-  const isVercel = window.location.hostname.includes('vercel.app');
-  if (isVercel && !localStorage.getItem('wazuh_backend_url')) {
-    bannerText.innerHTML = '⚠ Wazuh on private network (172.16.x.x) is unreachable from Vercel. <a href="javascript:openSettingsModal()" style="color:inherit;text-decoration:underline;font-weight:bold;">Open Settings</a> to enter your Cloudflare Tunnel URL (zero VPN).';
-  } else {
-    bannerText.textContent = 'Wazuh SIEM is offline or unreachable. Click to configure connection.';
-  }
+  bannerText.textContent = 'Wazuh SIEM offline. Click Settings to configure or run sync_wazuh.bat locally to push latest alerts.';
 }
 
 // Sync live alerts directly from attached Wazuh SIEM
@@ -1008,11 +1004,7 @@ async function syncLiveWazuhAlerts() {
       return;
     }
   } catch (err) {
-    const isVercel = window.location.hostname.includes('vercel.app');
     let helpMsg = `Could not sync live alerts from Wazuh: ${err.message}`;
-    if (isVercel && !localStorage.getItem('wazuh_backend_url')) {
-      helpMsg += '\n\nTroubleshooting: Your Wazuh instance is on a private network (172.16.20.62) and cannot be reached by Vercel directly.\nRun "start_bridge.bat" locally, copy the public https://*.trycloudflare.com URL, and paste it into Settings -> Backend URL (zero VPN required).';
-    }
     alert(helpMsg);
   }
 

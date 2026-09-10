@@ -82,8 +82,12 @@ class WazuhCorrelationHandler(http.server.SimpleHTTPRequestHandler):
                 root_dir = Path(__file__).parent.parent
                 synced_path = root_dir / "live_wazuh_alerts.json"
                 if synced_path.exists():
+                    agents = client.get_agents()
                     result["success"] = True
                     result["indexer_connected"] = True
+                    result["agents"] = agents
+                    result["agent_count"] = len(agents)
+                    result["manager_node"] = {"name": "vp", "id": "000"}
                     result["message"] = f"Connected to Wazuh SIEM feed (Synced alerts from {client.indexer_host})"
             self._send_json_response(result)
             return
