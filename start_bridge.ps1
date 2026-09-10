@@ -40,7 +40,7 @@ $serverProc = $null
 if (-not $portInUse) {
     Write-Host "[*] Starting local backend server on port $port..." -ForegroundColor Yellow
     $serverArgs = @("-m", "correlation_tool.server", "$port")
-    $serverProc = Start-Process -FilePath $pyCmd.Source -ArgumentList $serverArgs -PassThru -WindowStyle Hidden
+    $serverProc = Start-Process -FilePath $pyCmd.Source -ArgumentList $serverArgs -WorkingDirectory $root -PassThru -WindowStyle Hidden
     Start-Sleep -Seconds 1
 } else {
     Write-Host "[*] Local backend server already running on port $port." -ForegroundColor Green
@@ -54,17 +54,45 @@ if (Test-Path $logFile) {
 
 Write-Host "[*] Launching Cloudflare Tunnel (protocol: http2, zero VPN)..." -ForegroundColor Yellow
 $cfArgs = @("tunnel", "--protocol", "http2", "--logfile", $logFile, "--url", "http://localhost:$port")
-$cfProc = Start-Process -FilePath $cloudflared -ArgumentList $cfArgs -PassThru -WindowStyle Hidden
+$cfProc = Start-Process -FilePath $cloudflared -ArgumentList $cfArgs -WorkingDirectory $root -PassThru -WindowStyle Hidden
 
 Write-Host "[*] Waiting for tunnel URL..." -ForegroundColor Yellow
 $tunnelUrl = $null
-for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep -Seconds 1
-    if (Test-Path $logFile) {
-        $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
-        if ($content -match '(https://[a-zA-Z0-9-]+\.trycloudflare\.com)') {
-            $tunnelUrl = $matches[1]
+for ($attempt = 1; $attempt -le 3; $attempt++) {
+    for ($i = 0; $i -lt 25; $i++) {
+        Start-Sleep -Seconds 1
+        if (Test-Path $logFile) {
+            $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+            if ($content -match '(https://[a-zA-Z0-9-]+\.trycloudflare\.com)') {
+                $tunnelUrl = $matches[1]
+                break
+            }
+        }
+    }
+
+    if ($tunnelUrl) {
+        Write-Host "[*] Verifying tunnel connectivity ($tunnelUrl)..." -ForegroundColor Yellow
+        $verified = $false
+        for ($v = 0; $v -lt 10; $v++) {
+            Start-Sleep -Seconds 2
+            try {
+                $testRes = Invoke-RestMethod -Uri "$tunnelUrl/healthz" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+                if ($testRes.status -eq "ok") {
+                    $verified = $true
+                    break
+                }
+            } catch {
+                # Waiting for Cloudflare edge routing
+            }
+        }
+        if ($verified) {
             break
+        } else {
+            Write-Host "[!] Tunnel URL did not propagate in time. Requesting fresh tunnel..." -ForegroundColor Yellow
+            if ($cfProc -and -not $cfProc.HasExited) { Stop-Process -Id $cfProc.Id -Force -ErrorAction SilentlyContinue }
+            Remove-Item -Force $logFile -ErrorAction SilentlyContinue
+            $cfProc = Start-Process -FilePath $cloudflared -ArgumentList $cfArgs -WorkingDirectory $root -PassThru -WindowStyle Hidden
+            $tunnelUrl = $null
         }
     }
 }
@@ -72,7 +100,7 @@ for ($i = 0; $i -lt 30; $i++) {
 if ($tunnelUrl) {
     Write-Host ""
     Write-Host "============================================================" -ForegroundColor Green
-    Write-Host " [OK] ZERO-VPN BRIDGE IS ACTIVE!" -ForegroundColor Green
+    Write-Host " [OK] ZERO-VPN BRIDGE IS ACTIVE & VERIFIED!" -ForegroundColor Green
     Write-Host "============================================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Public Bridge URL: " -NoNewline

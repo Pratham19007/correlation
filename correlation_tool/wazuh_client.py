@@ -10,13 +10,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from correlation_tool.log_correlator import correlate_logs
 
-DEFAULT_CONFIG_PATH = Path("wazuh_config.json")
+DEFAULT_CONFIG_PATH = Path(__file__).parent.parent / "wazuh_config.json"
 
 
 def load_wazuh_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
     cfg = {
-        "host": "https://localhost:55000",
-        "indexer_host": "https://localhost:9200",
+        "host": "https://172.16.20.62:55000",
+        "indexer_host": "https://172.16.20.62:9200",
         "username": "admin",
         "password": "",
         "verify_ssl": False,
